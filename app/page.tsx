@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { interpretCoin } from "@/lib/interpretation";
 import type { MetricKey, RadarCoin, RadarResponse } from "@/lib/types";
 
 const labels: Record<MetricKey, string> = { liquidity: "Liquidity", volume: "Volume momentum", price: "Price momentum", age: "Token age", activity: "Transactions", risk: "Risk" };
@@ -12,8 +13,9 @@ function ScoreRing({ score }: { score: number }) { return <div className="score-
 
 function CoinCard({ coin }: { coin: RadarCoin }) {
   const explorer = `https://solscan.io/token/${coin.address}`;
+  const interpretation = interpretCoin(coin);
   return <article className="coin-card">
-    <div className="coin-heading"><span className="rank">#{coin.rank}</span>{coin.imageUrl ? <img src={coin.imageUrl} alt="" className="token-image" /> : <span className="token-fallback">{coin.symbol[0]}</span>}<div><h2>{coin.name}</h2><p>${coin.symbol} · {coin.dexId}</p></div><ScoreRing score={coin.score} /></div>
+    <div className="coin-heading"><span className="rank">#{coin.rank}</span>{coin.imageUrl ? <img src={coin.imageUrl} alt="" className="token-image" /> : <span className="token-fallback">{coin.symbol[0]}</span>}<div><h2>{coin.name}</h2><p>${coin.symbol} · {coin.dexId}</p></div><div className={`score-insight ${interpretation.tone}`}><ScoreRing score={coin.score} /><div className="interpretation"><b>{interpretation.tone === "early" ? "🟢" : interpretation.tone === "extended" ? "🟡" : "🔴"} {interpretation.label}</b><span>{interpretation.summary}</span></div></div></div>
     <div className="numbers"><div><span>Price</span><b>${coin.priceUsd < 0.01 ? coin.priceUsd.toPrecision(3) : coin.priceUsd.toFixed(4)}</b></div><div><span>24h move</span><b className={coin.priceChange24h >= 0 ? "positive" : "negative"}>{coin.priceChange24h >= 0 ? "+" : ""}{coin.priceChange24h.toFixed(1)}%</b></div><div><span>Liquidity</span><b>{money.format(coin.liquidityUsd)}</b></div><div><span>24h volume</span><b>{money.format(coin.volume24h)}</b></div></div>
     <div className="metrics">{(Object.entries(coin.breakdown) as [MetricKey, number][]).map(([key, value]) => <div className="metric" key={key}><div><span>{labels[key]}</span><b>{Math.round(value)}</b></div><i><em style={{ width: `${value}%` }} /></i></div>)}</div>
     <div className="activity"><span>{number.format(coin.buys24h)} buys / {number.format(coin.sells24h)} sells</span><span>{coin.ageHours < 24 ? `${Math.round(coin.ageHours)}h old` : `${Math.round(coin.ageHours / 24)}d old`}</span></div>
