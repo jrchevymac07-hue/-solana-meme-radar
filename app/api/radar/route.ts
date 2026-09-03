@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { scoreCoin, type PairInput } from "@/lib/score";
+import { persistRadarSnapshots } from "@/lib/snapshots";
 import type { RadarResponse } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -54,7 +55,13 @@ export async function GET() {
       if (!old || input.liquidityUsd > old.liquidityUsd) unique.set(input.address, input);
     }
     const coins = [...unique.values()].map(scoreCoin).sort((a, b) => b.score - a.score).slice(0, 5).map((coin, index) => ({ ...coin, rank: index + 1 }));
-    const body: RadarResponse = { coins, updatedAt: new Date().toISOString(), provider: "DexScreener public API" };
+    const updatedAt = new Date();
+    try {
+      await persistRadarSnapshots(coins, updatedAt);
+    } catch (error) {
+      console.error("Radar snapshot storage failed", error);
+    }
+    const body: RadarResponse = { coins, updatedAt: updatedAt.toISOString(), provider: "DexScreener public API" };
     return NextResponse.json(body, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     console.error("Radar provider request failed", error);
