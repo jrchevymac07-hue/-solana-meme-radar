@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model TokenSnapshot {
+  id                       String   @id @default(cuid())
+  tokenAddress             String
+  symbol                   String
+  name                     String
+  timestamp                DateTime @default(now())
+  snapshotBucket           DateTime
+  priceUsd                 Float
+  liquidityUsd             Float
+  volume24h                Float
+  priceChange24h           Float
+  buys24h                  Int
+  sells24h                 Int
+  tokenAge                 Float
+  radarScore               Int
+  liquidityMetricScore     Float
+  volumeMomentumScore      Float
+  priceMomentumScore       Float
+  tokenAgeScore            Float
+  transactionActivityScore Float
+  riskScore                Float
+  interpretationLabel      String
+  outcomes                 TokenOutcome[]
+
+  @@unique([tokenAddress, snapshotBucket])
+  @@index([tokenAddress, timestamp(sort: Desc)])
+  @@index([timestamp(sort: Desc)])
+}
+
+enum OutcomeStatus {
+  PENDING
+  WINNER
+  LOSER
+  FLAT
+  SEVERE_DRAWDOWN
+  UNAVAILABLE
+}
+
+model TokenOutcome {
+  id                          String        @id @default(cuid())
+  tokenSnapshotId             String
+  tokenAddress                String
+  symbol                      String
+  signalTimestamp             DateTime
+  horizonMinutes              Int
+  evaluatedAt                 DateTime      @default(now())
+  signalPriceUsd              Float
+  outcomePriceUsd             Float?
+  returnPct                   Float?
+  maxGainPct                  Float?
+  maxDrawdownPct              Float?
+  radarScoreAtSignal          Int
+  interpretationLabelAtSignal String
+  status                      OutcomeStatus @default(PENDING)
+  tokenSnapshot               TokenSnapshot @relation(fields: [tokenSnapshotId], references: [id], onDelete: Restrict)
+
+  @@unique([tokenSnapshotId, horizonMinutes])
+  @@index([tokenAddress, signalTimestamp(sort: Desc)])
+  @@index([horizonMinutes, status, evaluatedAt(sort: Desc)])
+  @@index([evaluatedAt(sort: Desc)])
+}
