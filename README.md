@@ -11,6 +11,14 @@ npm run dev
 
 The initial beta uses DexScreener's public market-data API server-side. Copy `.env.example` to `.env.local` only if you need to override the provider base URL; no API key is required for the default integration.
 
+Set `DATABASE_URL` to a PostgreSQL connection string to retain one snapshot per token per five-minute interval. After provisioning the database, apply the committed migration:
+
+```bash
+npm run db:migrate
+```
+
+Recent snapshots are available from `GET /api/history`; use `tokenAddress` and `limit` query parameters to filter the response.
+
 ## Quality checks
 
 ```bash
