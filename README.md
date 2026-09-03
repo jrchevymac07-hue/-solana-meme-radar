@@ -19,6 +19,8 @@ npm run db:migrate
 
 Recent snapshots are available from `GET /api/history`; use `tokenAddress` and `limit` query parameters to filter the response.
 
+The research-only Outcome Tracker evaluates stored snapshots at 1, 3, 6, and 24 hours. Trigger due evaluations with `POST /api/outcomes/evaluate` and read recent outcomes plus aggregate statistics from `GET /api/outcomes`. Missing comparison observations retain nullable historical price and return fields.
+
 ## Quality checks
 
 ```bash

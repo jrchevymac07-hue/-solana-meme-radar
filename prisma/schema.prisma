@@ -29,8 +29,37 @@ model TokenSnapshot {
   transactionActivityScore Float
   riskScore                Float
   interpretationLabel      String
+  outcomes                 TokenOutcome[]
 
   @@unique([tokenAddress, snapshotBucket])
   @@index([tokenAddress, timestamp(sort: Desc)])
   @@index([timestamp(sort: Desc)])
+}
+
+enum OutcomeStatus {
+  STRONG_GAIN
+  GAIN
+  FLAT
+  LOSS
+  STRONG_LOSS
+  UNAVAILABLE
+}
+
+model TokenOutcome {
+  id              String        @id @default(cuid())
+  snapshotId      String
+  tokenAddress    String
+  symbol          String
+  horizonHours    Int
+  targetTimestamp DateTime
+  evaluatedAt     DateTime      @default(now())
+  entryPriceUsd   Float
+  outcomePriceUsd Float?
+  returnPercent   Float?
+  status          OutcomeStatus
+  snapshot        TokenSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+
+  @@unique([snapshotId, horizonHours])
+  @@index([tokenAddress, horizonHours, evaluatedAt(sort: Desc)])
+  @@index([status, horizonHours])
 }
