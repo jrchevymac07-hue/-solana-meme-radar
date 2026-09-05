@@ -9,6 +9,39 @@ const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD
 const number = new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 });
 const shortAddress = (address: string) => `${address.slice(0, 5)}…${address.slice(-4)}`;
 
+
+type Outcome = { id: string; symbol: string; horizonHours: number; evaluatedAt: string; returnPercent: number | null; status: string };
+type OutcomeData = { outcomes: Outcome[]; statistics: { total: number; available: number; hitRate: number | null; averageReturnPercent: number | null; byHorizon: Array<{ horizonHours: number; available: number; hitRate: number | null; averageReturnPercent: number | null }> } };
+const percent = (value: number | null) => value === null ? "Unavailable" : `${value >= 0 ? "+" : ""}${value.toFixed(1)}%`;
+
+function OutcomeTracker() {
+  const [data, setData] = useState<OutcomeData | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [evaluating, setEvaluating] = useState(false);
+  const load = useCallback(async () => {
+    const response = await fetch("/api/outcomes?limit=20", { cache: "no-store" });
+    if (response.ok) setData(await response.json() as OutcomeData);
+  }, []);
+  useEffect(() => { void load(); }, [load]);
+  const evaluate = async () => {
+    setEvaluating(true); setMessage(null);
+    try {
+      const response = await fetch("/api/outcomes/evaluate", { method: "POST" });
+      if (!response.ok) throw new Error();
+      const result = await response.json() as { evaluated: number };
+      setMessage(`${result.evaluated} due outcome${result.evaluated === 1 ? "" : "s"} recorded.`);
+      await load();
+    } catch { setMessage("Outcome evaluation is unavailable."); }
+    finally { setEvaluating(false); }
+  };
+  return <section className="outcome-tracker">
+    <div className="outcome-title"><div><p className="eyebrow">LEARNING ENGINE</p><h2>Outcome Tracker</h2><p>Deterministic price outcomes at 1h, 3h, 6h, and 24h. Missing historical observations remain unavailable instead of being estimated.</p></div><button onClick={() => void evaluate()} disabled={evaluating}>{evaluating ? "Evaluating…" : "Evaluate due outcomes"}</button></div>
+    {message && <p className="outcome-message" role="status">{message}</p>}
+    {data ? <><div className="research-stats"><div><span>Evaluated</span><b>{data.statistics.available} / {data.statistics.total}</b></div><div><span>Hit rate</span><b>{percent(data.statistics.hitRate)}</b></div><div><span>Average return</span><b>{percent(data.statistics.averageReturnPercent)}</b></div>{data.statistics.byHorizon.map((item) => <div key={item.horizonHours}><span>{item.horizonHours}h research</span><b>{percent(item.averageReturnPercent)}</b><small>{item.available} samples · {percent(item.hitRate)} hit rate</small></div>)}</div>
+      {data.outcomes.length ? <div className="outcome-list">{data.outcomes.map((outcome) => <div className="outcome-row" key={outcome.id}><b>${outcome.symbol}</b><span>{outcome.horizonHours}h</span><span className={outcome.returnPercent !== null && outcome.returnPercent >= 0 ? "positive" : outcome.returnPercent === null ? "" : "negative"}>{percent(outcome.returnPercent)}</span><span>{outcome.status.replaceAll("_", " ")}</span><time>{new Date(outcome.evaluatedAt).toLocaleDateString()}</time></div>)}</div> : <p className="outcome-empty">No horizons have matured yet. Outcomes appear after stored radar snapshots reach their evaluation time.</p>}</> : <p className="outcome-empty">Outcome research is unavailable until database storage is configured.</p>}
+  </section>;
+}
+
 function ScoreRing({ score }: { score: number }) { return <div className="score-ring" style={{ "--score": `${score * 3.6}deg` } as React.CSSProperties}><strong>{score}</strong><span>score</span></div>; }
 
 function CoinCard({ coin }: { coin: RadarCoin }) {
@@ -32,5 +65,6 @@ export default function Home() {
     <section className="intro"><div><p className="eyebrow">RESEARCH ONLY · NO TRADING</p><h2>Find the signal before the noise.</h2><p>Top five live Solana candidates, scored from verifiable market activity. Always do your own research.</p></div><div className="status"><span className={error ? "dot warning" : "dot"} />{data ? <>Updated {new Date(data.updatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</> : "Awaiting live feed"}<small>{data?.provider ?? "Public market-data adapter"}</small></div></section>
     {error && <div className="notice" role="alert">{error}{stale && " Showing the last successful scan; this data may be stale."}</div>}
     {loading && !data ? <section className="grid skeletons" aria-label="Loading live market data">{[1, 2, 3, 4, 5].map((item) => <div key={item} className="skeleton" />)}</section> : data?.coins.length ? <section className="grid">{data.coins.map((coin) => <CoinCard coin={coin} key={coin.address} />)}</section> : <section className="empty"><h2>No candidates cleared the safety filters.</h2><p>The radar excludes thin liquidity, low activity, stale pairs, and obvious spam patterns. Check back after the next scan.</p></section>}
+    <OutcomeTracker />
     <footer>Radar Score weights liquidity, momentum, age, transaction activity, and risk signals. Market data can be incomplete or volatile — not financial advice.</footer></main>;
 }
