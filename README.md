@@ -2,6 +2,10 @@
 
 Private, research-only Solana meme-coin discovery dashboard. It does not connect a wallet and cannot trade.
 
+## Top Trader Intelligence
+
+An isolated, disabled-by-default foundation supports read-only trader providers, tracked wallets, immutable trade observations, source-scoped top-100 historical rankings and shadow research features. No source is connected yet and trader signals do not change radar scores. See [architecture, provider contract, ranking definitions and rollout](docs/top-trader-intelligence.md).
+
 ## Run locally
 
 ```bash

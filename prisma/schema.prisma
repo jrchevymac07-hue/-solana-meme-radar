@@ -7,6 +7,69 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Independent research tables; existing snapshot/outcome tables are untouched.
+model TrackedTrader {
+  id          String @id @default(cuid())
+  providerId  String
+  externalId  String
+  displayName String
+  firstSeenAt DateTime @default(now())
+  wallets     TraderWallet[]
+
+  @@unique([providerId, externalId])
+}
+
+model TraderWallet {
+  id         String @id @default(cuid())
+  providerId String
+  traderId   String
+  chain      String
+  address    String
+  firstSeenAt DateTime @default(now())
+  trader     TrackedTrader @relation(fields: [traderId], references: [id], onDelete: Restrict)
+  trades     ObservedTraderTrade[]
+
+  @@unique([providerId, chain, address])
+  @@index([traderId])
+}
+
+enum TraderTradeSide {
+  BUY
+  SELL
+}
+
+model ObservedTraderTrade {
+  id             String @id @default(cuid())
+  providerId     String
+  providerVersion String
+  externalId     String
+  walletId       String
+  tokenAddress   String
+  side           TraderTradeSide
+  transactionId  String
+  executedAt     DateTime
+  observedAt     DateTime @default(now())
+  quantity       Decimal @db.Decimal(38, 18)
+  priceUsd       Decimal? @db.Decimal(38, 18)
+  costBasisUsd   Decimal? @db.Decimal(38, 18)
+  realizedPnlUsd Decimal? @db.Decimal(38, 18)
+  finalized      Boolean
+  feesIncluded   Boolean
+  wallet         TraderWallet @relation(fields: [walletId], references: [id], onDelete: Restrict)
+
+  @@unique([providerId, externalId])
+  @@index([walletId, executedAt])
+  @@index([tokenAddress, observedAt])
+}
+
+model TraderProviderState {
+  providerId String @id
+  version    String
+  cursor     String?
+  revision   Int @default(0)
+  updatedAt  DateTime @updatedAt
+}
+
 model TokenSnapshot {
   id                       String   @id @default(cuid())
   tokenAddress             String
