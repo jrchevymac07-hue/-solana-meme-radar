@@ -1,0 +1,28 @@
+name: Social Research Collector
+on:
+  schedule:
+    - cron: '1/5 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: social-research
+  cancel-in-progress: false
+jobs:
+  collect:
+    if: vars.SOCIAL_MONITORING_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Collect public social research
+        env:
+          SOCIAL_SECRET: ${{ secrets.SOCIAL_CRON_SECRET }}
+        run: |
+          if [ -z "$SOCIAL_SECRET" ]; then
+            echo "SOCIAL_CRON_SECRET is not configured."
+            exit 1
+          fi
+          curl --fail-with-body --silent --show-error --max-time 55 \
+            --request POST --header "Authorization: Bearer $SOCIAL_SECRET" \
+            https://memeradar-wheat.vercel.app/api/cron/social
+

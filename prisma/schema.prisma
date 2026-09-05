@@ -103,6 +103,44 @@ model WalletScanCursor {
   lastSuccessAt DateTime?
 }
 
+model SocialSource {
+  id String @id
+  platform String
+  handle String
+  remoteAccountId String?
+  cursor String?
+  revision Int @default(0)
+  lastSuccessAt DateTime?
+  posts SocialPost[]
+}
+
+model SocialPost {
+  id String @id @default(cuid())
+  sourceId String
+  externalId String
+  publishedAt DateTime
+  firstObservedAt DateTime
+  permalink String
+  source SocialSource @relation(fields: [sourceId], references: [id])
+  observations SocialPostObservation[]
+  @@unique([sourceId, externalId])
+  @@index([firstObservedAt])
+}
+
+model SocialPostObservation {
+  id String @id @default(cuid())
+  postId String
+  observedAt DateTime
+  bucket DateTime
+  text String
+  metrics Json
+  mentions Json
+  editIds Json
+  post SocialPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  @@unique([postId, bucket])
+  @@index([observedAt])
+}
+
 model TokenSnapshot {
   id                       String   @id @default(cuid())
   tokenAddress             String
