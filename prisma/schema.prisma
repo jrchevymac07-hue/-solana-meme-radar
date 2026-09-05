@@ -70,6 +70,39 @@ model TraderProviderState {
   updatedAt  DateTime @updatedAt
 }
 
+// Raw chain evidence stays separate from verified trades and historical rankings.
+model WalletActivity {
+  id              String @id @default(cuid())
+  chainId         Int
+  walletAddress   String
+  traderHandle    String
+  identitySource  String
+  identityStatus  String
+  transactionHash String
+  logIndex        Int
+  blockNumber     BigInt
+  blockHash       String
+  tokenAddress    String
+  fromAddress     String
+  toAddress       String
+  rawAmount       String
+  direction       String
+  observedAt      DateTime @default(now())
+
+  @@unique([chainId, walletAddress, transactionHash, logIndex])
+  @@index([walletAddress, chainId, blockNumber])
+}
+
+model WalletScanCursor {
+  id            String @id
+  chainId       Int
+  walletAddress String
+  startBlock    BigInt
+  nextBlock     BigInt
+  revision      Int @default(0)
+  lastSuccessAt DateTime?
+}
+
 model TokenSnapshot {
   id                       String   @id @default(cuid())
   tokenAddress             String

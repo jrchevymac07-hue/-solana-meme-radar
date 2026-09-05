@@ -1,5 +1,7 @@
 # Top Trader Intelligence (research foundation)
 
+Follow-up: the app has been identified as FOMO (`fomo.family`). See [Unipcs public-wallet tracking](unipcs-wallet-tracking.md) for the implemented independent blockchain collector, source-attributed wallet mapping, and activation requirements. That collector stores raw transfer evidence separately; no normalized trade adapter is active yet. Statements below about an empty provider registry refer to the normalized trade pipeline.
+
 ## Architecture and isolation
 
 The existing Next.js app scans DexScreener through `lib/radar.ts`, computes the current score through `lib/score.ts`, and writes five-minute buckets through `lib/snapshots.ts`. GitHub Actions calls the authenticated `/api/cron/collect` endpoint. `lib/outcomes.ts` grades stored snapshots at 1h, 3h, 6h and 24h; its evaluator is exposed separately. This change does not add outcome scheduling or alter any of those paths.
