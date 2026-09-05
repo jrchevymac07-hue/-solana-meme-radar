@@ -28,3 +28,19 @@ npm run lint
 npm run test
 npm run build
 ```
+
+## Automatic snapshot collection
+
+Set `CRON_SECRET` to a long, random value in the Vercel Production environment. Both `GET` and `POST` requests to `/api/cron/collect` require `Authorization: Bearer <CRON_SECRET>` and fail closed with `401` when the secret is absent or incorrect.
+
+Vercel Hobby cron jobs cannot provide the five-minute frequency required for this research system, so this repository intentionally does not include a Vercel Cron schedule. The protected endpoint is ready for an external scheduler to call every five minutes. Configure that scheduler to send `CRON_SECRET` in the `Authorization: Bearer <CRON_SECRET>` header on every request; never put the secret in the URL or client-side code.
+
+To test a collection manually, keep the secret in a local environment variable and reference it without placing its value in source code or the URL:
+
+```bash
+curl --fail-with-body --request POST \
+  --header "Authorization: Bearer $CRON_SECRET" \
+  https://YOUR_DEPLOYMENT.example/api/cron/collect
+```
+
+The endpoint performs one bounded live scan and uses the existing snapshot persistence function. Its five-minute database uniqueness constraint makes overlapping or repeated invocations safe.
