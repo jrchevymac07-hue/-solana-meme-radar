@@ -31,3 +31,26 @@ button { background:var(--acid); border:0; border-radius:999px; padding:11px 15p
 .fomo-footnote { margin:16px 0 0; color:var(--muted); font-size:.7rem; line-height:1.5; }
 @media (min-width:800px) { .fomo-columns { grid-template-columns:1fr 1fr; } }
 @media (max-width:600px) { .fomo-heading { align-items:stretch; flex-direction:column; }.fomo-status { border-left:0; padding-left:0; } }
+
+.fomo-status button { display:block; margin-top:10px; padding:7px 11px; font-size:.65rem; }
+.fomo-coin-grid { display:grid; grid-template-columns:1fr; gap:12px; margin-top:22px; }
+.fomo-coin { padding:16px; border:1px solid #514274; border-radius:15px; background:linear-gradient(145deg,#121426,#0c1715); }
+.fomo-coin-title { display:flex; align-items:center; gap:10px; }
+.fomo-coin-title h3 { margin:0; font-size:1.05rem; }
+.fomo-coin-title small { display:block; margin-top:3px; color:var(--muted); font-size:.66rem; }
+.fomo-signal { margin-left:auto; text-align:right; }
+.fomo-signal b { display:block; color:var(--acid); font-size:1.15rem; }
+.fomo-signal span { display:block; color:var(--acid); font-size:.58rem; font-weight:800; letter-spacing:.06em; }
+.fomo-signal.wait b,.fomo-signal.wait span { color:var(--orange); }
+.fomo-market-numbers { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:11px; margin:15px 0; padding:13px 0; border-block:1px solid #3c3457; }
+.fomo-market-numbers span { display:block; color:var(--muted); font-size:.64rem; margin-bottom:4px; }
+.fomo-market-numbers b { font-size:.8rem; }
+.fomo-facts { margin:0; padding-left:18px; color:var(--muted); font-size:.7rem; line-height:1.65; }
+.fomo-source { display:inline-block; margin-top:12px; color:#cbb8ff; font-size:.68rem; font-weight:800; text-decoration:none; }
+.fomo-collection-status { display:flex; flex-direction:column; gap:5px; margin-top:16px; padding:13px; border:1px solid #3c3457; border-radius:12px; background:#0a1814; }
+.fomo-collection-status b { color:var(--acid); font-size:.76rem; }
+.fomo-collection-status span { color:var(--muted); font-size:.69rem; line-height:1.5; }
+.fomo-traders { margin-top:16px; }
+.fomo-traders summary { cursor:pointer; color:#cbb8ff; font-size:.72rem; font-weight:800; }
+.fomo-traders .fomo-list { margin-top:10px; grid-template-columns:repeat(1,minmax(0,1fr)); }
+@media (min-width:760px) { .fomo-coin-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }.fomo-market-numbers { grid-template-columns:repeat(3,minmax(0,1fr)); }.fomo-traders .fomo-list { grid-template-columns:repeat(2,minmax(0,1fr)); } }
