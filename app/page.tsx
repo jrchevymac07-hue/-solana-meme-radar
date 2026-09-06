@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { interpretCoin } from "@/lib/interpretation";
+import { FomoTraderPilot } from "@/components/fomo-trader-pilot";
 import type { MetricKey, RadarCoin, RadarResponse } from "@/lib/types";
 
 const labels: Record<MetricKey, string> = { liquidity: "Liquidity", volume: "Volume momentum", price: "Price momentum", age: "Token age", activity: "Transactions", risk: "Risk" };
@@ -65,6 +66,7 @@ export default function Home() {
     <section className="intro"><div><p className="eyebrow">RESEARCH ONLY · NO TRADING</p><h2>Find the signal before the noise.</h2><p>Top five live Solana candidates, scored from verifiable market activity. Always do your own research.</p></div><div className="status"><span className={error ? "dot warning" : "dot"} />{data ? <>Updated {new Date(data.updatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</> : "Awaiting live feed"}<small>{data?.provider ?? "Public market-data adapter"}</small></div></section>
     {error && <div className="notice" role="alert">{error}{stale && " Showing the last successful scan; this data may be stale."}</div>}
     {loading && !data ? <section className="grid skeletons" aria-label="Loading live market data">{[1, 2, 3, 4, 5].map((item) => <div key={item} className="skeleton" />)}</section> : data?.coins.length ? <section className="grid">{data.coins.map((coin) => <CoinCard coin={coin} key={coin.address} />)}</section> : <section className="empty"><h2>No candidates cleared the safety filters.</h2><p>The radar excludes thin liquidity, low activity, stale pairs, and obvious spam patterns. Check back after the next scan.</p></section>}
+    <FomoTraderPilot />
     <OutcomeTracker />
     <footer>Radar Score weights liquidity, momentum, age, transaction activity, and risk signals. Market data can be incomplete or volatile — not financial advice.</footer></main>;
 }
