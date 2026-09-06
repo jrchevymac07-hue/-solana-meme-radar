@@ -129,12 +129,19 @@ function sessionName(result: ChartResult): StockSetup["session"] {
 
 function intradayExtremes(result: ChartResult): { high: number; low: number; last: number } {
   const quote = result.indicators.quote[0];
-  const prices = quote.close.map(finite).filter((value) => value > 0);
-  const highs = quote.high.map(finite).filter((value) => value > 0);
-  const lows = quote.low.map(finite).filter((value) => value > 0);
+  const period = result.meta.currentTradingPeriod;
+  const timestamps = result.timestamp ?? [];
+  const currentIndices = timestamps
+    .map((timestamp, index) => ({ timestamp, index }))
+    .filter(({ timestamp }) => timestamp >= period.pre.start && timestamp <= period.post.end)
+    .map(({ index }) => index);
+  const indices = currentIndices.length ? currentIndices : quote.close.map((_, index) => index).slice(-160);
+  const prices = indices.map((index) => finite(quote.close[index])).filter((value) => value > 0);
+  const highs = indices.map((index) => finite(quote.high[index])).filter((value) => value > 0);
+  const lows = indices.map((index) => finite(quote.low[index])).filter((value) => value > 0);
   return {
-    high: highs.length ? Math.max(...highs.slice(-160)) : result.meta.regularMarketDayHigh,
-    low: lows.length ? Math.min(...lows.slice(-160)) : result.meta.regularMarketDayLow,
+    high: highs.length ? Math.max(...highs) : result.meta.regularMarketDayHigh,
+    low: lows.length ? Math.min(...lows) : result.meta.regularMarketDayLow,
     last: prices.at(-1) ?? result.meta.regularMarketPrice,
   };
 }
