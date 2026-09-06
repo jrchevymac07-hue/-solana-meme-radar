@@ -1,3 +1,32 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+
+type FomoCoin = {
+  id: string;
+  rank: number;
+  symbol: string;
+  name: string;
+  chain: string;
+  sourceUrl: string;
+  priceUsd: number;
+  marketCapUsd: number;
+  volume24h: number;
+  change24h: number;
+  change7d: number;
+  turnoverPct: number;
+  score: number;
+  signal: "STRONG WATCH" | "POSITIVE WATCH" | "WAIT";
+  facts: string[];
+};
+
+type LiveResponse = {
+  coins: FomoCoin[];
+  updatedAt: string;
+  provider: string;
+  snapshotStorage: "configured" | "not-configured";
+};
+
 const traders = [
   { name: "Unipcs", handle: "unipcs", displayedPnl: "+$4.7M" },
   { name: "Smokey", handle: "smokey0x", displayedPnl: "+$314.4K" },
@@ -7,43 +36,90 @@ const traders = [
   { name: "seekingknowledge", handle: "seekingknowledge", displayedPnl: "+$51.2K" },
 ] as const;
 
-const holdings = [
-  { symbol: "PONS", displayedValue: "$9.96M", displayedPnl: "+$9.89M" },
-  { symbol: "MarsCoin", displayedValue: "$7.68M", displayedPnl: "+$6.70M" },
-  { symbol: "USELESS", displayedValue: "$4.19M", displayedPnl: "+$3.36M" },
-  { symbol: "Basecoat", displayedValue: "$1.53M", displayedPnl: "+$1.03M" },
-] as const;
+const money = (value: number) =>
+  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: 2 }).format(value);
+
+const price = (value: number) =>
+  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: value < 0.01 ? 8 : 4 }).format(value);
+
+const pct = (value: number) => `${value >= 0 ? "+" : ""}${value.toFixed(1)}%`;
 
 export function FomoTraderPilot() {
+  const [data, setData] = useState<LiveResponse | null>(null);
+  const [error, setError] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+
+  const load = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const response = await fetch("/api/fomo-coins", { cache: "no-store" });
+      if (!response.ok) throw new Error("Live market feed unavailable");
+      setData(await response.json() as LiveResponse);
+      setError("");
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Live market feed unavailable");
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+    const timer = window.setInterval(() => void load(), 60_000);
+    return () => window.clearInterval(timer);
+  }, [load]);
+
   return <section className="fomo-pilot">
     <div className="fomo-heading">
       <div>
-        <p className="eyebrow">TRADER INTELLIGENCE · PILOT</p>
-        <h2>Fomo Research Watch</h2>
-        <p>Six visible Fantom Troupe members and four shared positions captured from the 24-hour clan view. These are research observations, not verified returns or trade recommendations.</p>
+        <p className="eyebrow">LIVE FOMO COIN INTELLIGENCE</p>
+        <h2>Ranked by facts, tracked by outcomes</h2>
+        <p>Fomo-observed positions are repriced live and ranked from 24-hour momentum, 7-day momentum, volume-to-market-cap turnover, and market-cap depth.</p>
       </div>
-      <div className="fomo-status"><span className="dot" />Observation loaded<small>Observed September 5, 2026 · 24h window</small></div>
-    </div>
-    <div className="fomo-columns">
-      <div>
-        <h3>Visible traders</h3>
-        <div className="fomo-list">{traders.map((trader) =>
-          <a key={trader.handle} href={`https://fomo.family/profile/${trader.handle}`} target="_blank" rel="noreferrer">
-            <span><b>{trader.name}</b><small>@{trader.handle}</small></span>
-            <strong>{trader.displayedPnl}</strong>
-          </a>
-        )}</div>
-      </div>
-      <div>
-        <h3>Shared position evidence</h3>
-        <div className="fomo-list">{holdings.map((holding) =>
-          <div key={holding.symbol}>
-            <span><b>{holding.symbol}</b><small>Displayed position value {holding.displayedValue}</small></span>
-            <strong>{holding.displayedPnl}</strong>
-          </div>
-        )}</div>
+      <div className="fomo-status">
+        <span className={`dot ${error ? "warning" : ""}`} />
+        {error ? "Feed interrupted" : data ? "Market feed live" : "Connecting"}
+        <small>{data ? `Updated ${new Date(data.updatedAt).toLocaleTimeString()}` : "Fetching CoinGecko"}</small>
+        <button type="button" onClick={() => void load()} disabled={refreshing}>{refreshing ? "Refreshing" : "Refresh now"}</button>
       </div>
     </div>
-    <p className="fomo-footnote">Pilot data has zero weight in Radar Score. The production collector will replace this dated observation when a repeatable authorized feed is available.</p>
+
+    {error && !data ? <p className="notice">{error}. The dashboard will retry automatically.</p> : null}
+
+    <div className="fomo-coin-grid">
+      {data?.coins.map((coin) => <article className="fomo-coin" key={coin.id}>
+        <div className="fomo-coin-title">
+          <span className="rank">#{coin.rank}</span>
+          <div><h3>{coin.symbol}</h3><small>{coin.name} · {coin.chain}</small></div>
+          <div className={`fomo-signal ${coin.signal === "WAIT" ? "wait" : ""}`}><b>{coin.score}</b><span>{coin.signal}</span></div>
+        </div>
+        <div className="fomo-market-numbers">
+          <div><span>Live price</span><b>{price(coin.priceUsd)}</b></div>
+          <div><span>24h</span><b className={coin.change24h >= 0 ? "positive" : "negative"}>{pct(coin.change24h)}</b></div>
+          <div><span>7d</span><b className={coin.change7d >= 0 ? "positive" : "negative"}>{pct(coin.change7d)}</b></div>
+          <div><span>24h volume</span><b>{money(coin.volume24h)}</b></div>
+          <div><span>Market cap</span><b>{money(coin.marketCapUsd)}</b></div>
+          <div><span>Turnover</span><b>{coin.turnoverPct.toFixed(1)}%</b></div>
+        </div>
+        <ul className="fomo-facts">{coin.facts.map((fact) => <li key={fact}>{fact}</li>)}</ul>
+        <a className="fomo-source" href={coin.sourceUrl} target="_blank" rel="noreferrer">Verify live source ↗</a>
+      </article>)}
+    </div>
+
+    <div className="fomo-collection-status">
+      <b>{data?.snapshotStorage === "configured" ? "Prediction storage active" : "Prediction storage needs DATABASE_URL"}</b>
+      <span>Five-minute snapshots feed the existing 1h, 3h, 6h, and 24h measured outcomes. Scores are recalculated from current data; no model-generated claims are used.</span>
+    </div>
+
+    <details className="fomo-traders">
+      <summary>Fomo evidence set · 6 visible Fantom Troupe traders</summary>
+      <div className="fomo-list">{traders.map((trader) =>
+        <a key={trader.handle} href={`https://fomo.family/profile/${trader.handle}`} target="_blank" rel="noreferrer">
+          <span><b>{trader.name}</b><small>@{trader.handle}</small></span>
+          <strong>{trader.displayedPnl}</strong>
+        </a>
+      )}</div>
+    </details>
+    <p className="fomo-footnote">Candidate membership comes from the observed Fantom Troupe 24h holdings. Live market values come from {data?.provider ?? "CoinGecko public API"}; Basecoat is excluded until its exact asset identity can be verified.</p>
   </section>;
 }
