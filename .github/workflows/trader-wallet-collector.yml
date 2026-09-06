@@ -1,0 +1,32 @@
+name: Trader Wallet Research Collector
+
+on:
+  schedule:
+    - cron: '4/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: trader-wallet-research
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    if: vars.TRADER_TRACKING_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Collect public wallet activity
+        env:
+          TRADER_SECRET: ${{ secrets.TRADER_CRON_SECRET }}
+        run: |
+          if [ -z "$TRADER_SECRET" ]; then
+            echo "TRADER_CRON_SECRET is not configured."
+            exit 1
+          fi
+          curl --fail-with-body --silent --show-error --max-time 45 \
+            --retry 2 --retry-delay 5 --request POST \
+            --header "Authorization: Bearer $TRADER_SECRET" \
+            https://memeradar-wheat.vercel.app/api/cron/traders

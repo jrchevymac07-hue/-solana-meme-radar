@@ -7,6 +7,140 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Independent research tables; existing snapshot/outcome tables are untouched.
+model TrackedTrader {
+  id          String @id @default(cuid())
+  providerId  String
+  externalId  String
+  displayName String
+  firstSeenAt DateTime @default(now())
+  wallets     TraderWallet[]
+
+  @@unique([providerId, externalId])
+}
+
+model TraderWallet {
+  id         String @id @default(cuid())
+  providerId String
+  traderId   String
+  chain      String
+  address    String
+  firstSeenAt DateTime @default(now())
+  trader     TrackedTrader @relation(fields: [traderId], references: [id], onDelete: Restrict)
+  trades     ObservedTraderTrade[]
+
+  @@unique([providerId, chain, address])
+  @@index([traderId])
+}
+
+enum TraderTradeSide {
+  BUY
+  SELL
+}
+
+model ObservedTraderTrade {
+  id             String @id @default(cuid())
+  providerId     String
+  providerVersion String
+  externalId     String
+  walletId       String
+  tokenAddress   String
+  side           TraderTradeSide
+  transactionId  String
+  executedAt     DateTime
+  observedAt     DateTime @default(now())
+  quantity       Decimal @db.Decimal(38, 18)
+  priceUsd       Decimal? @db.Decimal(38, 18)
+  costBasisUsd   Decimal? @db.Decimal(38, 18)
+  realizedPnlUsd Decimal? @db.Decimal(38, 18)
+  finalized      Boolean
+  feesIncluded   Boolean
+  wallet         TraderWallet @relation(fields: [walletId], references: [id], onDelete: Restrict)
+
+  @@unique([providerId, externalId])
+  @@index([walletId, executedAt])
+  @@index([tokenAddress, observedAt])
+}
+
+model TraderProviderState {
+  providerId String @id
+  version    String
+  cursor     String?
+  revision   Int @default(0)
+  updatedAt  DateTime @updatedAt
+}
+
+// Raw chain evidence stays separate from verified trades and historical rankings.
+model WalletActivity {
+  id              String @id @default(cuid())
+  chainId         Int
+  walletAddress   String
+  traderHandle    String
+  identitySource  String
+  identityStatus  String
+  transactionHash String
+  logIndex        Int
+  blockNumber     BigInt
+  blockHash       String
+  tokenAddress    String
+  fromAddress     String
+  toAddress       String
+  rawAmount       String
+  direction       String
+  observedAt      DateTime @default(now())
+
+  @@unique([chainId, walletAddress, transactionHash, logIndex])
+  @@index([walletAddress, chainId, blockNumber])
+}
+
+model WalletScanCursor {
+  id            String @id
+  chainId       Int
+  walletAddress String
+  startBlock    BigInt
+  nextBlock     BigInt
+  revision      Int @default(0)
+  lastSuccessAt DateTime?
+}
+
+model SocialSource {
+  id String @id
+  platform String
+  handle String
+  remoteAccountId String?
+  cursor String?
+  revision Int @default(0)
+  lastSuccessAt DateTime?
+  posts SocialPost[]
+}
+
+model SocialPost {
+  id String @id @default(cuid())
+  sourceId String
+  externalId String
+  publishedAt DateTime
+  firstObservedAt DateTime
+  permalink String
+  source SocialSource @relation(fields: [sourceId], references: [id])
+  observations SocialPostObservation[]
+  @@unique([sourceId, externalId])
+  @@index([firstObservedAt])
+}
+
+model SocialPostObservation {
+  id String @id @default(cuid())
+  postId String
+  observedAt DateTime
+  bucket DateTime
+  text String
+  metrics Json
+  mentions Json
+  editIds Json
+  post SocialPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  @@unique([postId, bucket])
+  @@index([observedAt])
+}
+
 model TokenSnapshot {
   id                       String   @id @default(cuid())
   tokenAddress             String
