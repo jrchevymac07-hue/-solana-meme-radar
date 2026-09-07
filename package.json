@@ -8,7 +8,7 @@
   "packageManager": "npm@11.4.2",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/build.mjs",
     "start": "next start",
     "lint": "eslint .",
     "test": "vitest run",
