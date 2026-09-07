@@ -2,6 +2,20 @@ generator client {
   provider = "prisma-client-js"
 }
 
+model StockResearchPlan {
+  id String @id
+  symbol String
+  issuedAt DateTime
+  lastQuoteAt DateTime
+  entry Float
+  stop Float
+  targetOne Float
+  targetTwo Float
+  direction Int
+  status String
+  @@index([issuedAt(sort: Desc)])
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")

@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 type StockPlan = {
+  quoteAt: string | null;
+  stale: boolean;
   symbol: "SPY" | "QQQ";
   name: string;
   price: number;
@@ -22,6 +24,7 @@ type StockPlan = {
 };
 
 type StockResponse = {
+  journal?: { status: string; rows: Array<{ id: string; symbol: string; issuedAt: string; entry: number; stop: number; status: string }> };
   updatedAt: string;
   marketState: string;
   sessionLabel: string;
@@ -127,7 +130,8 @@ export function StockMarketDashboard() {
     </div>
     {error && <div className="notice" role="alert">{error}{data && " Showing the last successful update."}</div>}
     {loading && !data ? <div className="stock-grid"><div className="stock-card skeleton" /><div className="stock-card skeleton" /></div> : <div className="stock-grid">{data?.plans.map(plan => <article className="stock-card" key={plan.symbol}>
-      <div className="stock-title"><div><span className="ticker">{plan.symbol}</span><h3>{plan.name}</h3></div><div className={`stock-bias ${plan.bias}`}><b>{plan.bias}</b><span>{plan.confidence}% setup confidence</span></div></div>
+      <div className="stock-title"><div><span className="ticker">{plan.symbol}</span><h3>{plan.name}</h3></div><div className={`stock-bias ${plan.bias}`}><b>{plan.bias}</b><span>Unvalidated trend score {plan.confidence}/100</span></div></div>
+      <p className="execution-rule">Quote: {plan.quoteAt ? new Date(plan.quoteAt).toLocaleString() : "Timestamp unavailable"}{plan.stale ? " · Older quote — do not treat these levels as a live entry" : " · Recent quote; provider delay may apply"}</p>
       <div className="stock-price"><b>{dollars.format(plan.price)}</b><span className={plan.changePercent >= 0 ? "positive" : "negative"}>{plan.changePercent >= 0 ? "+" : ""}{plan.changePercent.toFixed(2)}%</span></div>
       <MarketChart plan={plan} />
       <div className="trade-levels"><div><span>Trigger entry</span><b>{dollars.format(plan.entry)}</b></div><div><span>Invalidation / stop</span><b className="negative">{dollars.format(plan.stop)}</b></div><div><span>Target 1</span><b className="positive">{dollars.format(plan.targetOne)}</b></div><div><span>Target 2</span><b className="positive">{dollars.format(plan.targetTwo)}</b></div></div>
@@ -136,6 +140,7 @@ export function StockMarketDashboard() {
       <p className="execution-rule">Wait for the trigger; no entry if price opens beyond Target 1. Risk is defined by the stop, not by prediction confidence.</p>
     </article>)}</div>}
     {data && <div className="market-intelligence"><div><p className="eyebrow">HEADLINE PULSE</p><h3>{data.sentiment.label} sentiment <span>{data.sentiment.score >= 0 ? "+" : ""}{data.sentiment.score}</span></h3><p>Simple keyword score across {data.sentiment.sampleSize} current SPY/QQQ headlines. Price and volume remain the primary signal.</p></div><div className="headline-list">{data.news.slice(0, 5).map(item => <a href={item.url} target="_blank" rel="noreferrer" key={`${item.url}-${item.title}`}><b>{item.title}</b><span>{item.publisher} · {new Date(item.publishedAt).toLocaleString()}</span></a>)}</div></div>}
+    <section className="outcome-tracker"><p className="eyebrow">STOCK PREDICTION JOURNAL</p><p>{data?.journal?.status ?? "Waiting for journal status"}</p><p className="execution-rule">Original levels stay fixed. Statuses describe sampled prices, not executed trades. Price touches between checks are unknown.</p>{data?.journal?.rows.map(row => <div className="outcome-row" key={row.id}><b>{row.symbol}</b><span>{new Date(row.issuedAt).toLocaleString()}</span><span>Entry {row.entry}</span><span>Stop {row.stop}</span><span>{row.status.replaceAll("_", " ")}</span></div>)}</section>
     <ChartAnalyzer data={data} />
   </section>;
 }

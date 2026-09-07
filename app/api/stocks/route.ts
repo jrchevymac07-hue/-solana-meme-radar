@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
+import { recordStockPlans } from "@/lib/stock-journal";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 type ChartResult = {
-  meta: { regularMarketPrice?: number; previousClose?: number; chartPreviousClose?: number; regularMarketVolume?: number; exchangeTimezoneName?: string; marketState?: string };
+  meta: { regularMarketTime?: number; regularMarketPrice?: number; previousClose?: number; chartPreviousClose?: number; regularMarketVolume?: number; exchangeTimezoneName?: string; marketState?: string };
   timestamp?: number[];
   indicators: { quote: Array<{ high?: Array<number | null>; low?: Array<number | null>; close?: Array<number | null>; volume?: Array<number | null> }> };
 };
@@ -53,6 +54,8 @@ function buildPlan(symbol: "SPY" | "QQQ", result: ChartResult) {
     .slice(-72);
   return {
     symbol,
+    quoteAt: result.meta.regularMarketTime ? new Date(result.meta.regularMarketTime * 1000).toISOString() : null,
+    stale: !result.meta.regularMarketTime || Date.now() - result.meta.regularMarketTime * 1000 > 20 * 60_000,
     name: symbol === "SPY" ? "S&P 500 ETF" : "Nasdaq-100 ETF",
     price: round(price),
     changePercent: round(((price - previousClose) / previousClose) * 100),
@@ -79,7 +82,7 @@ async function news() {
     const body = await response.json() as { news?: Array<{ title?: string; publisher?: string; link?: string; providerPublishTime?: number }> };
     return body.news ?? [];
   }));
-  const unique = [...new Map(results.flat().filter(item => item.title && item.link).map(item => [item.link!, item])).values()].slice(0, 10);
+  const unique = [...new Map(results.flat().filter(item => item.title && item.link && item.providerPublishTime && Date.now() - item.providerPublishTime * 1000 < 48 * 3600_000).map(item => [item.link!, item])).values()].slice(0, 10);
   return unique.map(item => ({ title: item.title!, publisher: item.publisher ?? "Market news", url: item.link!, publishedAt: new Date((item.providerPublishTime ?? Date.now() / 1000) * 1000).toISOString() }));
 }
 
@@ -95,12 +98,15 @@ export async function GET() {
   try {
     const [spy, qqq, headlines] = await Promise.all([chart("SPY"), chart("QQQ"), news()]);
     const marketState = spy.meta.marketState ?? "UNKNOWN";
+    const plans = [buildPlan("SPY", spy), buildPlan("QQQ", qqq)];
+    const journal = await recordStockPlans(plans);
     const labels: Record<string, string> = { REGULAR: "Market open", PRE: "Pre-market", POST: "After hours", CLOSED: "Market closed" };
     return NextResponse.json({
       updatedAt: new Date().toISOString(),
       marketState,
       sessionLabel: labels[marketState] ?? "Market session unavailable",
-      plans: [buildPlan("SPY", spy), buildPlan("QQQ", qqq)],
+      plans,
+      journal,
       news: headlines,
       sentiment: sentiment(headlines),
       provider: "Yahoo Finance public market data"

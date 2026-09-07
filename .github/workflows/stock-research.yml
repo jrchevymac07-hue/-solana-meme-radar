@@ -1,0 +1,17 @@
+name: Stock Research Scan
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: stock-research
+  cancel-in-progress: false
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Refresh quotes and record stock research
+        run: curl --fail --silent --show-error --max-time 45 https://memeradar-wheat.vercel.app/api/stocks
