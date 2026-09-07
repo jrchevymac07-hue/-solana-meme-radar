@@ -95,3 +95,19 @@ button { background:var(--acid); border:0; border-radius:999px; padding:11px 15p
 .headline-list b { display:block; font-size:.72rem; line-height:1.35; }
 .headline-list span { display:block; margin-top:4px; color:var(--muted); font-size:.62rem; }
 @media (max-width:760px) { .stock-grid,.market-intelligence { grid-template-columns:1fr; }.stocks-heading { align-items:stretch; flex-direction:column; }.stocks-status { padding-left:0; border-left:0; }.header-actions select { min-width:155px; } }
+.market-chart { margin:2px 0 15px; padding:10px; border:1px solid #274563; border-radius:13px; background:linear-gradient(180deg,#081316,#0b1b1d); overflow:hidden; }
+.market-chart svg { display:block; width:100%; height:auto; }
+.chart-grid { stroke:#1d343c; stroke-width:1; }
+.price-line { fill:none; stroke:#8ed6ff; stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
+.chart-level line { stroke-width:1.6; stroke-dasharray:7 5; }.chart-level text { font-size:10px; font-weight:800; fill:#dcebe7; }
+.chart-level.entry line { stroke:#ffd15c; }.chart-level.stop line { stroke:#ff7373; }.chart-level.target line { stroke:#b8ff56; }.chart-level.target-two line { stroke:#57d99a; }
+.chart-time { display:flex; justify-content:space-between; color:var(--muted); font-size:.58rem; }
+.chart-analyzer { margin-top:18px; padding:22px; border:1px solid #514274; border-radius:18px; background:linear-gradient(135deg,#17182b,#0c1718); }
+.chart-analyzer>div:first-child p:not(.eyebrow) { max-width:760px; color:var(--muted); font-size:.74rem; line-height:1.55; }
+.chart-analyzer h3 { margin-bottom:7px; font-size:1.35rem; }
+.upload-workspace { display:grid; grid-template-columns:1.2fr .8fr; gap:16px; margin-top:16px; }
+.upload-drop { min-height:235px; display:grid; place-items:center; border:1px dashed #806eb2; border-radius:14px; background:#0b151c; overflow:hidden; cursor:pointer; }
+.upload-drop input { position:absolute; opacity:0; pointer-events:none; }.upload-drop img { width:100%; max-height:360px; object-fit:contain; }.upload-drop span { text-align:center; }.upload-drop b,.upload-drop small { display:block; }.upload-drop small { margin-top:6px; color:var(--muted); font-size:.66rem; }
+.upload-controls { display:flex; flex-direction:column; gap:12px; }.upload-controls label { color:var(--muted); font-size:.68rem; font-weight:700; }.upload-controls select,.upload-controls textarea { width:100%; margin-top:6px; border:1px solid #514274; border-radius:10px; padding:10px; background:#0b151c; color:var(--ink); font:inherit; }.upload-controls textarea { min-height:90px; resize:vertical; }.upload-controls button { align-self:flex-start; }
+.analysis-error { color:#ff9898; font-size:.7rem; }.chart-analysis { margin-top:16px; padding:16px; border:1px solid #514274; border-radius:13px; background:#0a1518; }.chart-analysis p:last-child { margin:0; color:#d8e8e3; white-space:pre-wrap; font-size:.75rem; line-height:1.65; }
+@media (max-width:760px) { .upload-workspace { grid-template-columns:1fr; }.upload-drop { min-height:190px; } }

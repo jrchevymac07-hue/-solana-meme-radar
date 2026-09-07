@@ -48,6 +48,9 @@ function buildPlan(symbol: "SPY" | "QQQ", result: ChartResult) {
   const targetTwo = entry + direction * atr * 2.5;
   const trendSpread = Math.abs(price - sma20) / price;
   const confidence = Math.min(82, Math.max(48, Math.round(55 + trendSpread * 900 + (bias === "neutral" ? -7 : 8))));
+  const series = (result.timestamp ?? []).map((time, index) => ({ time, price: quote.close?.[index] }))
+    .filter((point): point is { time: number; price: number } => typeof point.price === "number" && Number.isFinite(point.price))
+    .slice(-72);
   return {
     symbol,
     name: symbol === "SPY" ? "S&P 500 ETF" : "Nasdaq-100 ETF",
@@ -59,6 +62,7 @@ function buildPlan(symbol: "SPY" | "QQQ", result: ChartResult) {
     confidence,
     entry: round(entry), stop: round(stop), targetOne: round(targetOne), targetTwo: round(targetTwo),
     support: round(support), resistance: round(resistance),
+    series: series.map(point => ({ time: point.time, price: round(point.price) })),
     reasons: [
       `${price >= sma20 ? "Price is above" : "Price is below"} the 20-period trend at ${round(sma20)}.`,
       `${sma20 >= sma50 ? "Short-term trend leads" : "Short-term trend trails"} the 50-period trend at ${round(sma50)}.`,
