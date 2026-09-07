@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { interpretCoin } from "@/lib/interpretation";
 import { FomoTraderPilot } from "@/components/fomo-trader-pilot";
+import { StockMarketDashboard } from "@/components/stock-market-dashboard";
 import type { MetricKey, RadarCoin, RadarResponse } from "@/lib/types";
 
 const labels: Record<MetricKey, string> = { liquidity: "Liquidity", volume: "Volume momentum", price: "Price momentum", age: "Token age", activity: "Transactions", risk: "Risk" };
@@ -58,15 +59,18 @@ function CoinCard({ coin }: { coin: RadarCoin }) {
 }
 
 export default function Home() {
+  const [view, setView] = useState<"memes" | "stocks">("memes");
   const [data, setData] = useState<RadarResponse | null>(null); const [error, setError] = useState<string | null>(null); const [loading, setLoading] = useState(true); const [stale, setStale] = useState(false);
   const hasData = useRef(false);
   const load = useCallback(async () => { setLoading(!hasData.current); try { const response = await fetch("/api/radar", { cache: "no-store" }); if (!response.ok) throw new Error(); const next = await response.json() as RadarResponse; setData(next); hasData.current = true; setError(null); setStale(false); } catch { setError("We couldn’t refresh live market data."); setStale(hasData.current); } finally { setLoading(false); } }, []);
   useEffect(() => { void load(); const timer = window.setInterval(() => void load(), 60_000); return () => window.clearInterval(timer); }, [load]);
-  return <main><header><div><p className="eyebrow">SOLANA DISCOVERY TERMINAL</p><h1>Meme <span>Radar</span></h1></div><button onClick={() => void load()} disabled={loading}>{loading ? "Scanning…" : "Refresh radar"}</button></header>
-    <section className="intro"><div><p className="eyebrow">RESEARCH ONLY · NO TRADING</p><h2>Find the signal before the noise.</h2><p>Top five live Solana candidates, scored from verifiable market activity. Always do your own research.</p></div><div className="status"><span className={error ? "dot warning" : "dot"} />{data ? <>Updated {new Date(data.updatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</> : "Awaiting live feed"}<small>{data?.provider ?? "Public market-data adapter"}</small></div></section>
-    {error && <div className="notice" role="alert">{error}{stale && " Showing the last successful scan; this data may be stale."}</div>}
-    {loading && !data ? <section className="grid skeletons" aria-label="Loading live market data">{[1, 2, 3, 4, 5].map((item) => <div key={item} className="skeleton" />)}</section> : data?.coins.length ? <section className="grid">{data.coins.map((coin) => <CoinCard coin={coin} key={coin.address} />)}</section> : <section className="empty"><h2>No candidates cleared the safety filters.</h2><p>The radar excludes thin liquidity, low activity, stale pairs, and obvious spam patterns. Check back after the next scan.</p></section>}
-    <FomoTraderPilot />
-    <OutcomeTracker />
-    <footer>Radar Score weights liquidity, momentum, age, transaction activity, and risk signals. Market data can be incomplete or volatile — not financial advice.</footer></main>;
+  return <main><header><div><p className="eyebrow">{view === "memes" ? "SOLANA DISCOVERY TERMINAL" : "U.S. MARKET TERMINAL"}</p><h1>{view === "memes" ? <>Meme <span>Radar</span></> : <>Market <span>Radar</span></>}</h1></div><div className="header-actions"><button onClick={() => view === "memes" ? void load() : window.dispatchEvent(new Event("stock-refresh"))} disabled={view === "memes" && loading}>{view === "memes" ? (loading ? "Scanning…" : "Refresh radar") : "Live stocks"}</button><label>View<select value={view} onChange={(event) => setView(event.target.value as "memes" | "stocks")}><option value="memes">Meme coins</option><option value="stocks">Stocks · SPY + QQQ</option></select></label></div></header>
+    {view === "stocks" ? <StockMarketDashboard /> : <>
+      <section className="intro"><div><p className="eyebrow">RESEARCH ONLY · NO TRADING</p><h2>Find the signal before the noise.</h2><p>Top five live Solana candidates, scored from verifiable market activity. Always do your own research.</p></div><div className="status"><span className={error ? "dot warning" : "dot"} />{data ? <>Updated {new Date(data.updatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</> : "Awaiting live feed"}<small>{data?.provider ?? "Public market-data adapter"}</small></div></section>
+      {error && <div className="notice" role="alert">{error}{stale && " Showing the last successful scan; this data may be stale."}</div>}
+      {loading && !data ? <section className="grid skeletons" aria-label="Loading live market data">{[1, 2, 3, 4, 5].map((item) => <div key={item} className="skeleton" />)}</section> : data?.coins.length ? <section className="grid">{data.coins.map((coin) => <CoinCard coin={coin} key={coin.address} />)}</section> : <section className="empty"><h2>No candidates cleared the safety filters.</h2><p>The radar excludes thin liquidity, low activity, stale pairs, and obvious spam patterns. Check back after the next scan.</p></section>}
+      <FomoTraderPilot />
+      <OutcomeTracker />
+    </>}
+    <footer>{view === "memes" ? "Radar Score weights liquidity, momentum, age, transaction activity, and risk signals. Market data can be incomplete or volatile — not financial advice." : "Setups are mechanical research scenarios, not guaranteed outcomes. Confirm live price and size risk from the stop before acting."}</footer></main>;
 }
