@@ -25,10 +25,10 @@ async function chart(symbol: string) {
 
 function buildPlan(symbol: "SPY" | "QQQ", result: ChartResult) {
   const quote = result.indicators.quote[0] ?? {};
-  const closes = (quote.close ?? []).filter((value): value is number => Number.isFinite(value));
-  const highs = (quote.high ?? []).filter((value): value is number => Number.isFinite(value));
-  const lows = (quote.low ?? []).filter((value): value is number => Number.isFinite(value));
-  const volumes = (quote.volume ?? []).filter((value): value is number => Number.isFinite(value) && value > 0);
+  const closes = (quote.close ?? []).filter((value): value is number => typeof value === "number" && Number.isFinite(value));
+  const highs = (quote.high ?? []).filter((value): value is number => typeof value === "number" && Number.isFinite(value));
+  const lows = (quote.low ?? []).filter((value): value is number => typeof value === "number" && Number.isFinite(value));
+  const volumes = (quote.volume ?? []).filter((value): value is number => typeof value === "number" && Number.isFinite(value) && value > 0);
   if (closes.length < 8 || !highs.length || !lows.length) throw new Error(`Not enough ${symbol} observations`);
   const price = result.meta.regularMarketPrice ?? closes.at(-1)!;
   const previousClose = result.meta.previousClose ?? result.meta.chartPreviousClose ?? closes[0];
