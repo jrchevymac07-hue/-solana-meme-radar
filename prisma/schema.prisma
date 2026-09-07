@@ -156,11 +156,11 @@ model SocialPostObservation {
 }
 
 model TokenSnapshot {
-  id                       String   @id @default(cuid())
+  id                       String              @id @default(cuid())
   tokenAddress             String
   symbol                   String
   name                     String
-  timestamp                DateTime @default(now())
+  timestamp                DateTime            @default(now())
   snapshotBucket           DateTime
   priceUsd                 Float
   liquidityUsd             Float
@@ -173,11 +173,12 @@ model TokenSnapshot {
   liquidityMetricScore     Float
   volumeMomentumScore      Float
   priceMomentumScore       Float
-  tokenAgeScore             Float
+  tokenAgeScore            Float
   transactionActivityScore Float
   riskScore                Float
   interpretationLabel      String
   outcomes                 TokenOutcome[]
+  traderFeature            TokenTraderFeature?
 
   @@unique([tokenAddress, snapshotBucket])
   @@index([tokenAddress, timestamp(sort: Desc)])
@@ -210,4 +211,79 @@ model TokenOutcome {
   @@unique([snapshotId, horizonHours])
   @@index([tokenAddress, horizonHours, evaluatedAt(sort: Desc)])
   @@index([status, horizonHours])
+}
+
+enum TraderSource {
+  SOLANA_ONCHAIN
+  FOMO_DISCOVERY
+  MANUAL
+}
+
+enum TraderAction {
+  BUY
+  SELL
+}
+
+model TrackedTrader {
+  id                   String                      @id @default(cuid())
+  walletAddress        String                      @unique
+  displayName          String?
+  source               TraderSource
+  active               Boolean                     @default(true)
+  createdAt            DateTime                    @default(now())
+  updatedAt            DateTime                    @updatedAt
+  performanceSnapshots TraderPerformanceSnapshot[]
+  signals              TraderTokenSignal[]
+
+  @@index([active, updatedAt(sort: Desc)])
+}
+
+model TraderPerformanceSnapshot {
+  id                    String        @id @default(cuid())
+  traderId              String
+  observedAt            DateTime      @default(now())
+  leaderboardRank       Int?
+  pnlUsd                Float?
+  roiPercent            Float?
+  winRatePercent        Float?
+  drawdownPercent       Float?
+  realizedTradeCount    Int?
+  earlyEntryRatePercent Float?
+  consistencyPercent    Float?
+  intelligenceScore     Float
+  trader                TrackedTrader @relation(fields: [traderId], references: [id], onDelete: Cascade)
+
+  @@index([intelligenceScore(sort: Desc), observedAt(sort: Desc)])
+  @@index([traderId, observedAt(sort: Desc)])
+}
+
+model TraderTokenSignal {
+  id                   String        @id @default(cuid())
+  traderId             String
+  tokenAddress         String
+  action               TraderAction
+  observedAt           DateTime
+  transactionSignature String?       @unique
+  source               TraderSource
+  trader               TrackedTrader @relation(fields: [traderId], references: [id], onDelete: Cascade)
+
+  @@index([tokenAddress, observedAt(sort: Desc)])
+  @@index([traderId, observedAt(sort: Desc)])
+}
+
+model TokenTraderFeature {
+  id                String        @id @default(cuid())
+  snapshotId        String        @unique
+  tokenAddress      String
+  observedAt        DateTime
+  buySignalCount    Int
+  sellSignalCount   Int
+  topTraderCount    Int
+  weightedBuyScore  Float
+  weightedSellScore Float
+  netTraderScore    Float
+  snapshot          TokenSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+
+  @@index([tokenAddress, observedAt(sort: Desc)])
+  @@index([netTraderScore(sort: Desc), observedAt(sort: Desc)])
 }

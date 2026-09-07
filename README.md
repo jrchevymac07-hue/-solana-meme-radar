@@ -27,6 +27,18 @@ Recent snapshots are available from `GET /api/history`; use `tokenAddress` and `
 
 The research-only Outcome Tracker evaluates stored snapshots at 1, 3, 6, and 24 hours. Trigger due evaluations with `POST /api/outcomes/evaluate` and read recent outcomes plus aggregate statistics from `GET /api/outcomes`. Missing comparison observations retain nullable historical price and return fields.
 
+## Top Trader Intelligence
+
+The repository contains a research-only trader-intelligence foundation for ranking up to 100 public Solana wallets and turning recent top-trader buys and sells into a bounded token feature that can be compared with the existing 1h, 3h, 6h, and 24h outcomes.
+
+Trader ranking intentionally does not sort by displayed P&L alone. The deterministic score weights ROI, win rate, drawdown, realized sample size, early-entry quality, consistency, and P&L so a single oversized win does not automatically make a wallet trustworthy. Recent token signals are then weighted by both trader quality and recency before producing a neutral-to-bullish/bearish `netTraderScore`.
+
+The database schema includes tracked traders, performance observations, token buy/sell signals, and one trader feature per radar snapshot. This allows later learning analysis to answer questions such as whether clusters of historically strong wallets improve a radar setup's subsequent outcome.
+
+Fomo may be used as a manual discovery source for public trader/wallet information where permitted, but automated Fomo collection is deliberately disabled unless an official API or explicit automated-access permission is available. Do not add scraping or reverse-engineered private endpoints. The provider interface is designed so an approved Fomo integration or another compliant on-chain data provider can be added without changing the scoring model.
+
+This feature remains research-only: it does not copy trades, connect a wallet, or place orders.
+
 ## Quality checks
 
 ```bash
