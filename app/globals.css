@@ -157,3 +157,39 @@ footer { border-top:1px solid var(--line); margin-top:32px; padding-top:22px; }
 @media (min-width:1100px) { .grid { grid-template-columns:repeat(3,minmax(0,1fr)); }.coin-card:first-child { grid-column:span 1; }.coin-card:first-child .numbers,.coin-card:first-child .metrics { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media (max-width:700px) { header { align-items:flex-start; gap:12px; }.header-actions select { min-width:0; max-width:175px; }.intro { flex-direction:column; align-items:flex-start; }.status { white-space:normal; }.coin-card,.stock-card,.intro,.stocks-heading,.outcome-tracker,.fomo-pilot,.chart-analyzer,.market-intelligence { padding:18px; }.stock-price>b { font-size:1.8rem; }.score-insight { max-width:120px; }.stock-context { line-height:1.6; } }
 @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation:none!important; transition:none!important; } }
+
+/* Compact black / blue terminal */
+:root { --bg:#000; --panel:#000; --line:#252b35; --ink:#edf3ff; --muted:#9aa8bb; --acid:#409cff; }
+body { background:#000; }
+.intro,.stocks-heading,.coin-card,.stock-card,.outcome-tracker,.fomo-pilot,.chart-analyzer,.market-intelligence,.fomo-coin,.research-stats div,.trade-levels div,.fomo-collection-status,.chart-analysis,.fomo-list a,.fomo-list>div,.headline-list a,.market-chart,.upload-drop,.empty,.header-actions select,.upload-controls select,.upload-controls textarea { background:#000; border-color:var(--line); box-shadow:none; }
+main { padding:18px 20px 28px; }
+header { padding:0 0 14px; }
+h1 { font-size:clamp(1.8rem,4vw,2.5rem); }
+h1 span,.eyebrow,.ticker,.links a,.fomo-source,.fomo-columns h3,.fomo-traders summary { color:#409cff; }
+button { background:#2388f5; color:#fff; box-shadow:none; padding:9px 13px; border-radius:8px; }
+.header-actions { gap:6px; }.header-actions select { padding:7px 25px 7px 9px; }
+.intro,.stocks-heading { padding:16px; margin-top:16px; margin-bottom:12px; border-radius:12px; }
+.intro h2,.stocks-heading h2 { font-size:1.45rem; margin-bottom:6px; }
+.intro p:not(.eyebrow),.stocks-heading p:not(.eyebrow),.outcome-title p:not(.eyebrow),.fomo-heading p:not(.eyebrow) { font-size:.78rem; line-height:1.4; }
+.grid,.stock-grid { gap:12px; }.stock-grid { margin-top:12px; }
+.coin-card,.stock-card,.fomo-coin { padding:15px; border-radius:12px; }
+.coin-heading { gap:9px; }.coin-heading h2 { font-size:.98rem; }.coin-heading p { font-size:.67rem; }
+.token-image,.token-fallback { width:32px; height:32px; background:#071526; }
+.score-ring { width:42px; height:42px; }
+.numbers { margin:12px 0; padding:10px 0; gap:10px 8px; }.numbers b { font-size:.88rem; }.numbers span { font-size:.65rem; }
+.metrics { gap:7px 12px; }.metric div { font-size:.63rem; }.metric i { height:3px; background:#172536; }.metric em { background:#409cff; }
+.activity { padding:9px 0; margin-top:9px; }.links { padding-top:9px; }
+.positive,.outcome-row .positive,.score-insight.early .interpretation b,.fomo-list strong,.fomo-signal b,.fomo-signal span,.fomo-collection-status b,.stock-bias b { color:#409cff; }
+.dot { background:#409cff; box-shadow:0 0 8px #409cff66; }.dot.warning { background:var(--orange); box-shadow:none; }
+.price-line { stroke:#409cff; stroke-width:2; }.chart-grid { stroke:#1b2530; }
+.chart-level.entry line { stroke:#409cff; stroke-dasharray:8 3; }.chart-level.stop line { stroke:#a9d7ff; stroke-dasharray:2 4; }.chart-level.target line { stroke:#2676e8; stroke-dasharray:10 5; }.chart-level.target-two line { stroke:#73baff; stroke-dasharray:5 5; }
+.chart-level text { fill:#acd4ff; }.market-chart { margin:0 0 10px; padding:7px; border-radius:8px; }
+.stock-price { margin:12px 0 8px; }.stock-price>b { font-size:1.65rem; }.trade-levels { padding:9px 0; gap:6px; }.trade-levels div { padding:6px; }.trade-levels span { margin-bottom:3px; }
+.stock-context { padding:9px 0; }.execution-rule { margin-top:9px; padding-top:8px; }
+.outcome-tracker,.fomo-pilot,.chart-analyzer,.market-intelligence { padding:16px; margin-top:16px; border-radius:12px; }
+.outcome-title h2,.fomo-heading h2 { font-size:1.35rem; }.research-stats { margin-top:12px; gap:7px; }.research-stats div { padding:9px; }
+.fomo-coin-grid,.fomo-columns { margin-top:14px; gap:10px; }.fomo-market-numbers { margin:10px 0; padding:9px 0; gap:8px; }
+.headline-list a,.fomo-list a,.fomo-list>div { padding:8px 10px; border-radius:8px; }
+.upload-workspace { margin-top:10px; gap:12px; }.upload-drop { min-height:160px; }.upload-controls textarea { min-height:65px; }
+footer { margin-top:20px; padding-top:14px; }
+@media (max-width:700px) { main { padding:14px 12px 24px; }.intro,.stocks-heading,.coin-card,.stock-card,.outcome-tracker,.fomo-pilot,.chart-analyzer,.market-intelligence { padding:12px; }.intro { gap:10px; }.stock-price>b { font-size:1.55rem; } }
