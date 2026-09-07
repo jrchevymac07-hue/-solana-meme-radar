@@ -1,4 +1,5 @@
 "use client";
+import { AnalystProgress } from "@/components/analyst-progress";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -141,6 +142,7 @@ export function StockMarketDashboard() {
     </article>)}</div>}
     {data && <div className="market-intelligence"><div><p className="eyebrow">HEADLINE PULSE</p><h3>{data.sentiment.label} sentiment <span>{data.sentiment.score >= 0 ? "+" : ""}{data.sentiment.score}</span></h3><p>Simple keyword score across {data.sentiment.sampleSize} current SPY/QQQ headlines. Price and volume remain the primary signal.</p></div><div className="headline-list">{data.news.slice(0, 5).map(item => <a href={item.url} target="_blank" rel="noreferrer" key={`${item.url}-${item.title}`}><b>{item.title}</b><span>{item.publisher} · {new Date(item.publishedAt).toLocaleString()}</span></a>)}</div></div>}
     <section className="outcome-tracker"><p className="eyebrow">STOCK PREDICTION JOURNAL</p><p>{data?.journal?.status ?? "Waiting for journal status"}</p><p className="execution-rule">Original levels stay fixed. Statuses describe sampled prices, not executed trades. Price touches between checks are unknown.</p>{data?.journal?.rows.map(row => <div className="outcome-row" key={row.id}><b>{row.symbol}</b><span>{new Date(row.issuedAt).toLocaleString()}</span><span>Entry {row.entry}</span><span>Stop {row.stop}</span><span>{row.status.replaceAll("_", " ")}</span></div>)}</section>
+    <AnalystProgress market="stocks" />
     <ChartAnalyzer data={data} />
   </section>;
 }
