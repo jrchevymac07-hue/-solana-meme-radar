@@ -1,6 +1,22 @@
 import { describe, expect, it, vi } from "vitest";
-import { collectRadarSnapshots } from "./radar";
+import { collectRadarSnapshots, getSolanaDiscoveryAddresses } from "./radar";
 import type { RadarResponse } from "./types";
+
+describe("radar discovery", () => {
+  it("combines Solana candidates across feeds, deduplicates them, and ignores other chains", () => {
+    expect(getSolanaDiscoveryAddresses([
+      [{ chainId: "solana", tokenAddress: "mint-a" }, { chainId: "ethereum", tokenAddress: "eth-mint" }],
+      [{ chainId: "solana", tokenAddress: "mint-a" }, { chainId: "solana", tokenAddress: "mint-b" }],
+    ])).toEqual(["mint-a", "mint-b"]);
+  });
+
+  it("trims addresses and enforces the provider batch limit", () => {
+    expect(getSolanaDiscoveryAddresses([
+      Array.from({ length: 35 }, (_, index) => ({ chainId: "solana", tokenAddress: ` mint-${index} ` })),
+    ])).toHaveLength(30);
+    expect(getSolanaDiscoveryAddresses([[{ chainId: "solana", tokenAddress: "  " }]])).toEqual([]);
+  });
+});
 
 describe("radar collection", () => {
   it("persists every coin returned by the shared live scan", async () => {

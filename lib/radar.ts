@@ -2,7 +2,7 @@ import { scoreCoin, type PairInput } from "./score";
 import { persistRadarSnapshots } from "./snapshots";
 import type { RadarResponse } from "./types";
 
-type Boost = { chainId?: string; tokenAddress?: string };
+type DiscoveryItem = { chainId?: string; tokenAddress?: string };
 type DexPair = {
   chainId?: string; dexId?: string; pairAddress?: string; url?: string; pairCreatedAt?: number;
   baseToken?: { address?: string; name?: string; symbol?: string };
@@ -26,6 +26,19 @@ const isSafe = (pair: DexPair) => {
     !/(test|airdrop|giveaway|scam|claim)/.test(name);
 };
 
+export function getSolanaDiscoveryAddresses(feeds: readonly DiscoveryItem[][], limit = 30): string[] {
+  const addresses = new Set<string>();
+  for (const feed of feeds) {
+    for (const item of feed) {
+      if (item.chainId === "solana" && typeof item.tokenAddress === "string" && item.tokenAddress.trim()) {
+        addresses.add(item.tokenAddress.trim());
+        if (addresses.size >= limit) return [...addresses];
+      }
+    }
+  }
+  return [...addresses];
+}
+
 async function fetchJson<T>(path: string): Promise<T> {
   const baseUrl = (process.env.DEXSCREENER_API_URL ?? "https://api.dexscreener.com").replace(/\/$/, "");
   const response = await fetch(`${baseUrl}${path}`, { headers: { Accept: "application/json" }, cache: "no-store", signal: AbortSignal.timeout(10_000) });
@@ -34,9 +47,29 @@ async function fetchJson<T>(path: string): Promise<T> {
 }
 
 export async function scanRadar(): Promise<RadarResponse> {
-  const [latest, top] = await Promise.all([fetchJson<Boost[]>("/token-boosts/latest/v1"), fetchJson<Boost[]>("/token-boosts/top/v1")]);
-  const addresses = [...new Set([...latest, ...top].filter((item) => item.chainId === "solana").map((item) => item.tokenAddress).filter((address): address is string => Boolean(address)))].slice(0, 30);
-  if (!addresses.length) throw new Error("No Solana discovery candidates returned by provider");
+  // Discovery is intentionally multi-source: profiles and community takeovers
+  // surface newly listed tokens, while boosts add promoted candidates. Promotion
+  // is a discovery hint only; it does not add points to the Radar Score.
+  const discoveryPaths = [
+    "/token-profiles/latest/v1",
+    "/community-takeovers/latest/v1",
+    "/token-boosts/latest/v1",
+    "/token-boosts/top/v1",
+  ];
+  const feedResults = await Promise.allSettled(
+    discoveryPaths.map((path) => fetchJson<DiscoveryItem[]>(path)),
+  );
+  const feeds = feedResults.flatMap((result) =>
+    result.status === "fulfilled" && Array.isArray(result.value) ? [result.value] : [],
+  );
+  const addresses = getSolanaDiscoveryAddresses(feeds);
+  if (!addresses.length) {
+    const failures = feedResults.filter((result) => result.status === "rejected").length;
+    throw new Error(failures === discoveryPaths.length
+      ? "All DexScreener discovery feeds are unavailable"
+      : "No Solana discovery candidates returned by provider");
+  }
+
   const pairs = await fetchJson<DexPair[]>(`/tokens/v1/solana/${addresses.join(",")}`);
   const unique = new Map<string, PairInput>();
   for (const pair of pairs.filter(isSafe)) {
@@ -50,7 +83,7 @@ export async function scanRadar(): Promise<RadarResponse> {
     if (!old || input.liquidityUsd > old.liquidityUsd) unique.set(input.address, input);
   }
   const coins = [...unique.values()].map(scoreCoin).sort((a, b) => b.score - a.score).slice(0, 5).map((coin, index) => ({ ...coin, rank: index + 1 }));
-  return { coins, updatedAt: new Date().toISOString(), provider: "DexScreener public API" };
+  return { coins, updatedAt: new Date().toISOString(), provider: "DexScreener public API · multi-feed discovery" };
 }
 
 export async function collectRadarSnapshots(
